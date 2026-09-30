@@ -151,21 +151,40 @@ export function buildCounterfactualTree(assumption: string): CounterfactualTree 
   };
 }
 
-export function waterBranch(tree: CounterfactualTree, nodeId: string): CounterfactualTree {
+export function waterBranch(
+  tree: CounterfactualTree,
+  nodeId: string,
+  requestId?: string
+): CounterfactualTree {
   const target = tree.nodes[nodeId];
-  if (!target) return tree;
+  if (!target || target.isPruned) return { ...tree };
 
-  target.vitality = Math.min(100, target.vitality + 20);
-  target.waterCount += 1;
+  if (requestId && target.appliedWaterRequestIds?.includes(requestId)) {
+    return { ...tree };
+  }
+
+  const wateredTarget: LifeNode = {
+    ...target,
+    vitality: Math.min(100, target.vitality + 20),
+    waterCount: target.waterCount + 1,
+    appliedWaterRequestIds: requestId
+      ? [...(target.appliedWaterRequestIds ?? []), requestId]
+      : target.appliedWaterRequestIds
+  };
+
+  const nodes: Record<string, LifeNode> = {
+    ...tree.nodes,
+    [nodeId]: wateredTarget
+  };
 
   // If watered 2 times and in layer 1 or 2, sprout a serendipity branch!
-  if (target.waterCount === 2 && target.layerIndex < 3 && target.childrenIds.length < 2) {
-    const newId = `node-${target.layerIndex + 1}-twist-${Date.now().toString(36).slice(-4)}`;
-    const nextLayer = target.layerIndex + 1;
+  if (wateredTarget.waterCount === 2 && wateredTarget.layerIndex < 3 && wateredTarget.childrenIds.length < 2) {
+    const newId = `node-${wateredTarget.layerIndex + 1}-twist-${Date.now().toString(36).slice(-4)}`;
+    const nextLayer = wateredTarget.layerIndex + 1;
     const cat: LifeCategory = 'twist';
-    tree.nodes[newId] = {
+    nodes[newId] = {
       id: newId,
-      parentId: target.id,
+      parentId: wateredTarget.id,
       layerIndex: nextLayer,
       eraLabel: `${ERA_LABELS[nextLayer]}·奇遇枝桠`,
       title: '因浇水而盛放的意外分支：突发奇遇',
@@ -179,10 +198,13 @@ export function waterBranch(tree: CounterfactualTree, nodeId: string): Counterfa
       specimenQuote: '“当你足够专注地灌溉，奇迹就会在干涸的断枝上抽芽。”',
       childrenIds: []
     };
-    target.childrenIds.push(newId);
+    nodes[nodeId] = {
+      ...wateredTarget,
+      childrenIds: [...wateredTarget.childrenIds, newId]
+    };
   }
 
-  return { ...tree };
+  return { ...tree, nodes };
 }
 
 export function pruneBranch(tree: CounterfactualTree, nodeId: string): CounterfactualTree {

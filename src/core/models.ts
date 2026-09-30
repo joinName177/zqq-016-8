@@ -10,6 +10,7 @@ export interface LifeNode {
   vitality: number; // 0 - 100
   isPruned: boolean;
   waterCount: number;
+  appliedWaterRequestIds?: string[];
   category: LifeCategory;
   categoryName: string;
   color: string;

@@ -1,8 +1,13 @@
 import { CounterfactualTree, LifeSpecimen, LifeNode } from '../core/models';
 
+export interface WaterNodeState {
+  requestId: string;
+  status: 'pending' | 'failed';
+}
+
 export interface TreeUIHandlers {
   onGrowNewTree: (assumption: string) => void;
-  onWaterNode: (nodeId: string) => void;
+  onWaterNode: (nodeId: string, requestId?: string) => void;
   onPruneNode: (nodeId: string) => void;
   onHarvestNode: (nodeId: string) => void;
   onDeleteSpecimen: (id: string) => void;
@@ -15,6 +20,7 @@ export function renderTreeApp(
   specimens: LifeSpecimen[],
   isCabinetOpen: boolean,
   presets: string[],
+  waterNodeStates: Record<string, WaterNodeState>,
   handlers: TreeUIHandlers
 ) {
   const esc = (s: string) =>
@@ -88,9 +94,26 @@ export function renderTreeApp(
                   </div>
 
                   <div class="node-actions">
-                    <button class="btn-action btn-water" data-id="${node.id}" title="注入生命力" ${node.isPruned ? 'disabled' : ''}>
-                      💧 浇水 (${node.waterCount})
-                    </button>
+                    ${(() => {
+                      const waterState = waterNodeStates[node.id];
+                      const disabled = node.isPruned || waterState?.status === 'pending';
+                      const label = waterState
+                        ? waterState.status === 'pending'
+                          ? '💧 浇水处理中…'
+                          : '🔁 重试浇水'
+                        : `💧 浇水 (${node.waterCount})`;
+                      const title = waterState
+                        ? waterState.status === 'pending'
+                          ? '浇水请求处理中，请勿重复点击'
+                          : '上次浇水失败，请重试'
+                        : '注入生命力';
+
+                      return `<button class="btn-action btn-water" data-id="${node.id}" data-request-id="${
+                        waterState?.requestId ?? ''
+                      }" title="${title}" ${disabled ? 'disabled' : ''}>
+                        ${label}
+                      </button>`;
+                    })()}
                     <button class="btn-action btn-prune" data-id="${node.id}" title="剪除此分支">
                       ✂️ 修剪
                     </button>
@@ -196,7 +219,8 @@ export function renderTreeApp(
   container.querySelectorAll('.btn-water').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      if (id) handlers.onWaterNode(id);
+      const requestId = btn.getAttribute('data-request-id') || undefined;
+      if (id) handlers.onWaterNode(id, requestId);
     });
   });
 

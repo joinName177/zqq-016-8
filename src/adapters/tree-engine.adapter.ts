@@ -12,8 +12,8 @@ export class TreeEngineAdapter implements TreeEnginePort {
     return buildCounterfactualTree(assumption);
   }
 
-  water(tree: CounterfactualTree, nodeId: string): CounterfactualTree {
-    return waterBranch(tree, nodeId);
+  water(tree: CounterfactualTree, nodeId: string, requestId?: string): CounterfactualTree {
+    return waterBranch(tree, nodeId, requestId);
   }
 
   prune(tree: CounterfactualTree, nodeId: string): CounterfactualTree {
