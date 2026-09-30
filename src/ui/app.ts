@@ -15,6 +15,7 @@ export function renderTreeApp(
   specimens: LifeSpecimen[],
   isCabinetOpen: boolean,
   presets: string[],
+  pendingWaterIds: ReadonlySet<string>,
   handlers: TreeUIHandlers
 ) {
   const esc = (s: string) =>
@@ -88,7 +89,7 @@ export function renderTreeApp(
                   </div>
 
                   <div class="node-actions">
-                    <button class="btn-action btn-water" data-id="${node.id}" title="注入生命力" ${node.isPruned ? 'disabled' : ''}>
+                    <button class="btn-action btn-water" data-id="${node.id}" title="注入生命力" ${node.isPruned || pendingWaterIds.has(node.id) ? 'disabled' : ''}>
                       💧 浇水 (${node.waterCount})
                     </button>
                     <button class="btn-action btn-prune" data-id="${node.id}" title="剪除此分支">

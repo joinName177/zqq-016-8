@@ -147,13 +147,27 @@ export function buildCounterfactualTree(assumption: string): CounterfactualTree 
     rootId,
     nodes,
     createdAt: new Date().toLocaleDateString('zh-CN'),
-    specimens: []
+    specimens: [],
+    appliedWaterOps: []
   };
 }
 
-export function waterBranch(tree: CounterfactualTree, nodeId: string): CounterfactualTree {
+export function waterBranch(
+  tree: CounterfactualTree,
+  nodeId: string,
+  opId?: string
+): CounterfactualTree {
   const target = tree.nodes[nodeId];
   if (!target) return tree;
+
+  // 幂等保护：同一次浇水提交（相同 opId）只允许生效一次。
+  // 快速连点、刷新后重放、失败重试都会携带相同 opId 进入这里，直接跳过，不再重复增加活力。
+  if (opId) {
+    if (tree.appliedWaterOps.includes(opId)) {
+      return tree;
+    }
+    tree.appliedWaterOps.push(opId);
+  }
 
   target.vitality = Math.min(100, target.vitality + 20);
   target.waterCount += 1;

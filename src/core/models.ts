@@ -37,4 +37,6 @@ export interface CounterfactualTree {
   nodes: Record<string, LifeNode>;
   createdAt: string;
   specimens: LifeSpecimen[];
+  /** 已成功应用的浇水操作幂等键，用于拦截重复提交（快速连点 / 刷新重放 / 失败重试） */
+  appliedWaterOps: string[];
 }
